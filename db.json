@@ -1,7 +1,39 @@
 {
-    "users": [
-      { "id": 1, "email": "shuvraj@example.com", "password": "123456", "name": "Shuvraj" },
-      { "id": 2, "email": "bikash@example.com", "password": "abcdef", "name": "Bikash" }
-    ]
-  }
   
+    "revenue": [
+      { "id": 1, "month": "Jan", "amount": 5000 },
+      { "id": 2, "month": "Feb", "amount": 8000 },
+      { "id": 3, "month": "Mar", "amount": 6500 }
+    ],
+    "invoices": [
+      { "id": "inv1", "amount": 20000, "status": "paid", "date": "2025-08-01", "customer_id": "c1" },
+      { "id": "inv2", "amount": 15000, "status": "pending", "date": "2025-08-02", "customer_id": "c2" }
+    ],
+    "customers": [
+      { "id": "c1", "name": "Alice", "email": "alice@test.com", "image_url": "/avatar1.png" },
+      { "id": "c2", "name": "Bob", "email": "bob@test.com", "image_url": "/avatar2.png" }
+    ],
+  
+  "cards": {
+    "numberOfInvoices": 20,
+    "numberOfCustomers": 15,
+    "totalPaidInvoices": 1200,
+    "totalPendingInvoices": 300
+  },
+  "users": [
+    { "id": 1, "email": "shuvraj@example.com", "password": "123456", "name": "Shuvraj" },
+    { "id": 2, "email": "bikash@example.com", "password": "abcdef", "name": "Bikash" }
+  ],
+  "arenas": [
+  { "id": 1, "name": "राष्ट्रिय स्वतन्त्र पार्टी", "urlr": "/room/1", "owner_id": 1, "email":"bikash@example.com", "url": "/room1.jpg"},
+  { "id": 2, "name": "Music Club", "urfl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room2.jpg" },
+  { "id": 2, "name": "Music Club", "urdl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room3.jpg" },
+  { "id": 1, "name": "Rastriya Swatantra Party", "urfl": "/room/1", "owner_id": 1, "email":"bikash@example.com" ,"url": "/room4.jpg"},
+  { "id": 2, "name": "Tulsa Collection", "urdl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room5.png" },
+  { "id": 2, "name": "Music Club", "urfl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room6.jpg" },
+  { "id": 1, "name": "Rastriya Swatantra Party", "urtl": "/room/1", "owner_id": 1, "email":"bikash@example.com", "url": "/room7.jpg"},
+  { "id": 2, "name": "Sekuwa Park", "urtl": "/room/2", "owner_id": 2, "email":"alice@test.com" , "url": "/room8.jpg"},
+  { "id": 2, "name": "Music Club", "utrl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room9.png" }
+]
+}
+

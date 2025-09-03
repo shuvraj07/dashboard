@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { CheckCircle, Users } from "lucide-react";
 import Image from "next/image";
-import SearchBar from "./ui/search";
-import YTSearchBar from "./ui/dashboard/searchBar";
+import SearchBar from "../ui/search";
+import YTSearchBar from "../ui/dashboard/searchBar";
 
 type Arena = {
   id: number;
