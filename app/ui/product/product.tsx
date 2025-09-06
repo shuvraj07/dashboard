@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 
-interface Product {
-  id: number;
+export interface Product {
+  id: string; // Firestore document ID
   title: string;
   description: string;
   price: number;
@@ -31,7 +31,9 @@ export default function ProductCard({ product, addToBag }: ProductCardProps) {
           {product.description}
         </p>
         <div className="mt-3 flex items-center justify-between">
-          <p className="font-bold text-blue-600">${product.price.toFixed(2)}</p>
+          <p className="font-bold text-blue-600">
+            ${Number(product.price).toFixed(2)}
+          </p>
           <button
             onClick={() => addToBag(product)}
             className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"

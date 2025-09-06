@@ -18,18 +18,18 @@ export default function SideBar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
-    { name: "Home", icon: <HomeIcon className="w-5 h-5" /> },
-    { name: "Shorts", icon: <VideoCameraIcon className="w-5 h-5" /> },
-    { name: "Subscriptions", icon: <BookmarkIcon className="w-5 h-5" /> },
-  ];
+    { name: "Home", icon: <HomeIcon className="w-5 h-5" />, href: "/" },
 
-  const yourItems = [
-    { name: "History", icon: <ClockIcon className="w-5 h-5" /> },
-    { name: "Playlists", icon: <VideoCameraIcon className="w-5 h-5" /> },
-    { name: "Your videos", icon: <VideoCameraIcon className="w-5 h-5" /> },
-    { name: "Your courses", icon: <VideoCameraIcon className="w-5 h-5" /> },
-    { name: "Watch Later", icon: <ClockIcon className="w-5 h-5" /> },
-    { name: "Liked videos", icon: <HeartIcon className="w-5 h-5" /> },
+    {
+      name: "Subscriptions",
+      icon: <BookmarkIcon className="w-5 h-5" />,
+      href: "/subscriptions",
+    },
+    {
+      name: "Dashboard",
+      icon: <ClockIcon className="w-5 h-5" />,
+      href: "/dashboard",
+    }, // Added dashboard link
   ];
 
   return (
@@ -91,30 +91,19 @@ export default function SideBar() {
         {/* Menu Items */}
         <nav className="flex flex-col gap-2 p-4 grow">
           {menuItems.map((item) => (
-            <button
+            <Link
               key={item.name}
+              href={item.href}
               className={`flex items-center gap-3 p-2 rounded-md transition-colors ${
                 collapsed ? "justify-center" : "justify-start"
               } hover:bg-blue-600`}
             >
               {item.icon}
               {!collapsed && <span>{item.name}</span>}
-            </button>
+            </Link>
           ))}
 
           <hr className="my-3 border-blue-400/40" />
-
-          {yourItems.map((item) => (
-            <button
-              key={item.name}
-              className={`flex items-center gap-3 p-2 rounded-md transition-colors ${
-                collapsed ? "justify-center" : "justify-start"
-              } hover:bg-blue-600`}
-            >
-              {item.icon}
-              {!collapsed && <span>{item.name}</span>}
-            </button>
-          ))}
         </nav>
       </aside>
     </>

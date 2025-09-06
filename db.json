@@ -25,9 +25,9 @@
     { "id": 2, "email": "bikash@example.com", "password": "abcdef", "name": "Bikash" }
   ],
   "arenas": [
-  { "id": 1, "name": "राष्ट्रिय स्वतन्त्र पार्टी", "urlr": "/room/1", "owner_id": 1, "email":"bikash@example.com", "url": "/room1.jpg"},
-  { "id": 2, "name": "Music Club", "urfl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room2.jpg" },
-  { "id": 2, "name": "Music Club", "urdl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room3.jpg" },
+  { "id": 1, "name": "राष्ट्रिय स्वतन्त्र पार्टी", "urlr": "/room/1", "owner_id": 1, "email":"bikash@example.com", "url": "/room10.png"},
+  { "id": 2, "name": "CNN", "urfl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room2.jpg" },
+  { "id": 2, "name": "Ekcamp HQ", "urdl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room3.jpg" },
   { "id": 1, "name": "Rastriya Swatantra Party", "urfl": "/room/1", "owner_id": 1, "email":"bikash@example.com" ,"url": "/room4.jpg"},
   { "id": 2, "name": "Tulsa Collection", "urdl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room5.png" },
   { "id": 2, "name": "Music Club", "urfl": "/room/2", "owner_id": 2, "email":"alice@test.com", "url": "/room6.jpg" },

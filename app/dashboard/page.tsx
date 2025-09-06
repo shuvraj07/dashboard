@@ -1,3 +1,7 @@
+"use client"; // Make this a client component
+
+import { useState, useEffect } from "react";
+import { auth, signOut } from "@/app/firebase";
 import { Card } from "@/app/ui/dashboard/cards";
 import RevenueChart from "@/app/ui/dashboard/revenue-chart";
 import LatestInvoices from "@/app/ui/dashboard/latest-invoices";
@@ -9,18 +13,63 @@ import {
   fetchUsers,
 } from "@/app/lib/data";
 
-export default async function Page() {
-  const revenue = await fetchRevenue();
-  const latestInvoices = await fetchLatestInvoices();
-  const cardData = await fetchCardData();
-  const users = await fetchUsers();
+export default function DashboardPage() {
+  const [user, setUser] = useState<any>(null);
+
+  // Track user auth state
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((u) => {
+      if (u) setUser(u);
+      else setUser(null);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      alert("Logged out successfully ✅");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
+
+  const [revenue, setRevenue] = useState<any>(null);
+  const [latestInvoices, setLatestInvoices] = useState<any>([]);
+  const [cardData, setCardData] = useState<any>({});
+  const [users, setUsers] = useState<any>([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      setRevenue(await fetchRevenue());
+      setLatestInvoices(await fetchLatestInvoices());
+      setCardData(await fetchCardData());
+      setUsers(await fetchUsers());
+    }
+    fetchData();
+  }, []);
 
   return (
     <main className="p-6">
-      {/* Dashboard Heading */}
-      <h1 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-        Dashboard
-      </h1>
+      {/* Dashboard Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className={`${lusitana.className} text-xl md:text-2xl`}>
+          Dashboard
+        </h1>
+
+        {user && (
+          <div className="flex items-center gap-4">
+            <span className="font-semibold">Hello, {user.displayName}</span>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1 bg-red-500 text-white rounded"
+            >
+              Sign Out
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Cards */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -47,10 +96,7 @@ export default async function Page() {
       </div>
 
       {/* Revenue & Latest Invoices */}
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8 mb-6">
-        <RevenueChart revenue={revenue} />
-        <LatestInvoices latestInvoices={latestInvoices} />
-      </div>
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8 mb-6"></div>
 
       {/* Users List */}
       <h2 className={`${lusitana.className} mb-4 text-lg md:text-xl`}>Users</h2>
