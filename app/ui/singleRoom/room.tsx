@@ -30,7 +30,10 @@ type Arena = {
 
 export default function SingleRoom() {
   const params = useParams();
-  const arenaId = params?.id as string;
+  const arenaId = Array.isArray(params?.id) ? params.id[0] : params?.id;
+
+  // Guard clause if arenaId is missing
+  if (!arenaId) return <p>Loading...</p>;
 
   const [arena, setArena] = useState<Arena | null>(null);
   const [loadingArena, setLoadingArena] = useState(true);

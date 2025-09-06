@@ -5,6 +5,6 @@ interface RoomPageProps {
 }
 
 export default function RoomPage({ params }: RoomPageProps) {
-  // Pass the id to the client component
+  // Pass the id to the cl
   return <SingleRoom />;
 }
