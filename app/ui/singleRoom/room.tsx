@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { CheckCircle, ShoppingBag, X } from "lucide-react";
+import { CheckCircle, X } from "lucide-react";
+
 import Presentation from "../presentConsole";
 import ProductsList, { Product } from "../product/productCard";
 import SubscribeButton from "../subscribe/subscribe";
 import ProfileMic from "../profile";
 import Campers from "../campers/campers";
+
 import {
   getFirestore,
   doc,
@@ -28,7 +30,7 @@ type Arena = {
 
 export default function SingleRoom() {
   const params = useParams();
-  const arenaId = params.id as string;
+  const arenaId = params?.id as string;
 
   const [arena, setArena] = useState<Arena | null>(null);
   const [loadingArena, setLoadingArena] = useState(true);
@@ -37,6 +39,7 @@ export default function SingleRoom() {
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   const db = getFirestore(app);
+
   const total = bag.reduce((sum, p) => sum + p.price, 0);
 
   const addToBag = (p: Product) => setBag((b) => [...b, p]);
@@ -52,8 +55,10 @@ export default function SingleRoom() {
       try {
         const arenaRef = doc(db, "arenas", arenaId);
         const arenaSnap = await getDoc(arenaRef);
-        if (arenaSnap.exists())
+
+        if (arenaSnap.exists()) {
           setArena({ id: arenaSnap.id, ...arenaSnap.data() } as Arena);
+        }
       } catch (err) {
         console.error("Failed to fetch arena data", err);
       } finally {
@@ -62,7 +67,7 @@ export default function SingleRoom() {
     };
 
     fetchArenaData();
-  }, [arenaId]);
+  }, [arenaId, db]);
 
   // Checkout / Save order
   const handleCheckout = async () => {
