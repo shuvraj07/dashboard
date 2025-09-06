@@ -29,7 +29,10 @@ export default function ClubhouseLanding() {
   const [user, setUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [loadingArenas, setLoadingArenas] = useState(true);
-
+  const handleSearch = (query: string) => {
+    console.log("Search query:", query);
+    // do whatever you need with the query
+  };
   // Persist user state
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((u) => {
@@ -113,7 +116,7 @@ export default function ClubhouseLanding() {
         )}
       </div>
 
-      <YTSearchBar />
+      <YTSearchBar onSearch={handleSearch} />
 
       {/* Arenas */}
       <section id="rooms" className="bg-white py-6 sm:py-10 w-full">
