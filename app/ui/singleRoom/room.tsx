@@ -29,8 +29,8 @@ type Arena = {
 };
 
 export default function SingleRoom() {
-  const params = useParams();
-  const arenaId = params?.id as string;
+  const params = useParams<{ id: string }>();
+  const arenaId = params?.id;
 
   const [arena, setArena] = useState<Arena | null>(null);
   const [loadingArena, setLoadingArena] = useState(true);
