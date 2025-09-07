@@ -1,6 +1,12 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const withPWA = require("next-pwa")({
+  dest: "public", // output folder for service worker
+  register: true,
+  skipWaiting: true,
+});
 
-const nextConfig: NextConfig = {
+const nextConfig = {
+  reactStrictMode: true,
   images: {
     domains: [
       "old.bizshala.com",
@@ -8,9 +14,9 @@ const nextConfig: NextConfig = {
       "picsum.photos",
       "i.ibb.co",
       "lh3.googleusercontent.com",
-    ], // 👈 add this line
+    ],
   },
-  /* config options here */
+  // other Next.js config options
 };
 
-export default nextConfig;
+module.exports = withPWA(nextConfig);

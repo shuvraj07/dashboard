@@ -1,0 +1,22 @@
+{
+    "name": "Ekcamp Platform",
+    "short_name": "Ekcamp",
+    "start_url": "/",
+    "id": "/", 
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4f46e5",
+    "icons": [
+      {
+        "src": "/icons/ekcamp12.jpg",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/ekcamp12.jpg",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+  
