@@ -1,15 +1,23 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { auth, onAuthStateChanged } from "@/app/firebase";
+import { auth, onAuthStateChanged, db } from "@/app/firebase";
+import {
+  collection,
+  doc,
+  setDoc,
+  onSnapshot,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
 
 // Replace with your Agora App ID
 const APP_ID = "b48c972faec9438c88c4dfff718dc4f0";
 
 type UserInfo = {
-  uid: number;
-  name: string;
-  avatar: string;
+  uid: string;
+  displayName: string;
+  photoURL?: string;
   muted: boolean;
 };
 
@@ -21,17 +29,17 @@ const Campers = ({ channelName }: { channelName: string }) => {
   const [remoteUsers, setRemoteUsers] = useState<UserInfo[]>([]);
   const [joined, setJoined] = useState(false);
   const [muted, setMuted] = useState(true);
-  const [uid, setUid] = useState<number | null>(null);
   const [user, setUser] = useState<any>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Show toast notifications
+  // Toast notifications
   const showToast = (message: string) => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
+    setTimeout(
+      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
+      3000
+    );
   };
 
   // Track Firebase login
@@ -40,124 +48,118 @@ const Campers = ({ channelName }: { channelName: string }) => {
     return () => unsubscribe();
   }, []);
 
-  // Initialize Agora when logged in
+  // Firestore reference for the current channel
+  const roomRef = collection(db, "rooms", channelName, "users");
+
+  // Sync Firestore users in real-time
+  useEffect(() => {
+    const unsub = onSnapshot(roomRef, (snapshot) => {
+      const users: UserInfo[] = [];
+      snapshot.forEach((doc) => users.push(doc.data() as UserInfo));
+      setRemoteUsers(users);
+    });
+    return () => unsub();
+  }, [channelName]);
+
+  // Initialize Agora and handle independent channel
   useEffect(() => {
     if (!user) return;
 
-    let mounted = true;
+    let rtcClient: any;
+    let micTrack: any;
 
     const initAgora = async () => {
       const AgoraRTC = (await import("agora-rtc-sdk-ng")).default;
-      const rtcClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+      rtcClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
       setClient(rtcClient);
 
-      // Generate stable UID
-      const userId = parseInt(user.uid.slice(0, 6), 36);
-      setUid(userId);
+      const uid = user.uid;
 
       // Join channel
-      await rtcClient.join(APP_ID, channelName, null, userId);
-      setJoined(true);
+      await rtcClient.join(APP_ID, channelName, null, uid);
 
-      // Create local mic track (start muted)
-      const micTrack = await AgoraRTC.createMicrophoneAudioTrack({
+      // Create microphone track but start muted
+      micTrack = await AgoraRTC.createMicrophoneAudioTrack({
         AEC: true,
         AGC: true,
         ANS: true,
       });
+      micTrack.setEnabled(false); // start muted
       setLocalTrack(micTrack);
       await rtcClient.publish([micTrack]);
-      micTrack.setEnabled(false); // Start muted
+      setJoined(true);
 
-      // Add self to remoteUsers for UI
-      addRemoteUser({
-        uid: userId,
-        name: user.displayName || "Me",
+      // Add self to Firestore
+      await setDoc(doc(roomRef, uid), {
+        uid,
+        displayName: user.displayName || "Anonymous",
+        photoURL: user.photoURL,
         muted: true,
-        avatar: user.photoURL || `https://i.pravatar.cc/150?u=${userId}`,
       });
 
-      // Subscribe to remote users already in room
-      Object.values(rtcClient.remoteUsers).forEach(async (remoteUser: any) => {
-        await rtcClient.subscribe(remoteUser, "audio");
-        remoteUser.audioTrack?.play();
-        addRemoteUser({
-          uid: remoteUser.uid,
-          name: remoteUser.uid.toString(),
-          muted: false,
-          avatar: `https://i.pravatar.cc/150?u=${remoteUser.uid}`,
-        });
-        showToast(`User ${remoteUser.uid} is already in the room`);
-      });
+      // Subscribe to other users
+      rtcClient.on(
+        "user-published",
+        async (remoteUser: any, mediaType: string) => {
+          if (mediaType === "audio") {
+            await rtcClient.subscribe(remoteUser, "audio");
+            remoteUser.audioTrack?.play(); // play remote audio
+          }
+        }
+      );
 
-      // Handle new users joining
-      rtcClient.on("user-published", async (remoteUser: any, mediaType) => {
-        await rtcClient.subscribe(remoteUser, mediaType);
-        if (mediaType === "audio") remoteUser.audioTrack?.play();
-        addRemoteUser({
-          uid: remoteUser.uid,
-          name: remoteUser.uid.toString(),
-          muted: false,
-          avatar: `https://i.pravatar.cc/150?u=${remoteUser.uid}`,
-        });
-        showToast(`User ${remoteUser.uid} joined the room`);
-      });
-
-      // Handle users leaving
       rtcClient.on("user-unpublished", (remoteUser: any) => {
-        setRemoteUsers((prev) => prev.filter((u) => u.uid !== remoteUser.uid));
-        showToast(`User ${remoteUser.uid} left the room`);
+        // Handled by Firestore presence
       });
+
+      // Handle tab close / leave
+      const handleBeforeUnload = async () => {
+        await leaveChannel(rtcClient, micTrack);
+      };
+      window.addEventListener("beforeunload", handleBeforeUnload);
     };
 
     initAgora();
 
     return () => {
-      mounted = false;
-      leaveChannel();
+      leaveChannel(rtcClient, micTrack);
     };
-  }, [user]);
+  }, [user, channelName]);
 
-  const addRemoteUser = (remoteUser: UserInfo) => {
-    setRemoteUsers((prev) => {
-      if (prev.find((u) => u.uid === remoteUser.uid)) return prev;
-      return [...prev, remoteUser];
-    });
-  };
-
-  // Toggle mic on/off (Clubhouse-style)
+  // Toggle mic
   const toggleMute = async () => {
-    if (!localTrack) return;
+    if (!localTrack || !user) return;
+    const newMuted = !muted;
+    await localTrack.setEnabled(!newMuted);
+    setMuted(newMuted);
 
-    await localTrack.setEnabled(muted); // true = unmute, false = mute
-    setMuted(!muted);
-    showToast(muted ? "You unmuted" : "You muted");
-
-    // Update own muted status in remoteUsers for UI
-    setRemoteUsers((prev) =>
-      prev.map((u) => (u.uid === uid ? { ...u, muted: !muted } : u))
-    );
+    // Update Firestore
+    await updateDoc(doc(roomRef, user.uid), { muted: newMuted });
   };
 
-  // Leave the channel
-  const leaveChannel = async () => {
-    if (!client) return;
-    if (localTrack) {
-      await client.unpublish([localTrack]);
-      localTrack.stop();
-      localTrack.close();
+  // Leave channel
+  const leaveChannel = async (rtcClient?: any, track?: any) => {
+    const clientToLeave = rtcClient || client;
+    const localTrackToStop = track || localTrack;
+
+    if (localTrackToStop) {
+      await clientToLeave.unpublish([localTrackToStop]);
+      localTrackToStop.stop();
+      localTrackToStop.close();
       setLocalTrack(null);
     }
-    await client.leave();
+    if (clientToLeave) await clientToLeave.leave();
+
     setJoined(false);
     setRemoteUsers([]);
-    setUid(null);
-    showToast("You left the room");
+    setMuted(true);
+
+    if (user) await deleteDoc(doc(roomRef, user.uid));
   };
 
   return (
     <div className="bg-white rounded-2xl shadow p-6 flex flex-col h-full relative">
-      <h2 className="text-xl font-bold mb-4">Campers Room</h2>
+      <h2 className="text-xl font-bold mb-4">Campers Room: {channelName}</h2>
 
       {/* Toasts */}
       <div className="fixed top-4 right-4 space-y-2 z-50">
@@ -176,16 +178,18 @@ const Campers = ({ channelName }: { channelName: string }) => {
         {remoteUsers.map((u) => (
           <div
             key={u.uid}
-            className="flex flex-col items-center p-3 rounded-lg bg-gray-100"
+            className={`flex flex-col items-center p-3 rounded-lg ${
+              u.uid === user?.uid ? "bg-green-100" : "bg-gray-100"
+            }`}
           >
             <img
-              src={u.avatar}
-              alt={u.name}
+              src={u.photoURL || `https://i.pravatar.cc/150?u=${u.uid}`}
+              alt={u.displayName}
               className="w-16 h-16 rounded-full"
             />
-            <span className="mt-2 text-sm font-medium">{u.name}</span>
+            <span className="mt-2 text-sm font-medium">{u.displayName}</span>
             <span className="text-xs text-gray-500">
-              {u.uid === uid ? "(You)" : "In Room"}
+              {u.uid === user?.uid ? "(You)" : "In Room"}
             </span>
             <span className="mt-1 text-xs">
               {u.muted ? "Muted" : "Speaking"}
@@ -206,7 +210,7 @@ const Campers = ({ channelName }: { channelName: string }) => {
             {muted ? "Unmute" : "Mute"}
           </button>
           <button
-            onClick={leaveChannel}
+            onClick={() => leaveChannel()}
             className="px-4 py-2 rounded bg-gray-700 text-white"
           >
             Leave Room
