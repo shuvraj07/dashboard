@@ -32,14 +32,13 @@ const Campers = ({ channelName }: { channelName: string }) => {
   const [user, setUser] = useState<any>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Toast notifications
+  // Toast notification
   const showToast = (message: string) => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message }]);
-    setTimeout(
-      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-      3000
-    );
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
   };
 
   // Track Firebase login
@@ -48,10 +47,10 @@ const Campers = ({ channelName }: { channelName: string }) => {
     return () => unsubscribe();
   }, []);
 
-  // Firestore reference for the current channel
+  // Firestore reference for the room
   const roomRef = collection(db, "rooms", channelName, "users");
 
-  // Sync Firestore users in real-time
+  // Sync users from Firestore in real-time
   useEffect(() => {
     const unsub = onSnapshot(roomRef, (snapshot) => {
       const users: UserInfo[] = [];
@@ -59,32 +58,30 @@ const Campers = ({ channelName }: { channelName: string }) => {
       setRemoteUsers(users);
     });
     return () => unsub();
-  }, [channelName]);
+  }, []);
 
-  // Initialize Agora and handle independent channel
+  // Initialize Agora
   useEffect(() => {
     if (!user) return;
 
-    let rtcClient: any;
-    let micTrack: any;
-
     const initAgora = async () => {
       const AgoraRTC = (await import("agora-rtc-sdk-ng")).default;
-      rtcClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+      const rtcClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
       setClient(rtcClient);
 
-      const uid = user.uid;
+      const uid = user.uid; // Firebase UID as Agora UID
+      setMuted(true);
 
       // Join channel
       await rtcClient.join(APP_ID, channelName, null, uid);
 
-      // Create microphone track but start muted
-      micTrack = await AgoraRTC.createMicrophoneAudioTrack({
+      // Create microphone track (start muted)
+      const micTrack = await AgoraRTC.createMicrophoneAudioTrack({
         AEC: true,
         AGC: true,
         ANS: true,
       });
-      micTrack.setEnabled(false); // start muted
+      micTrack.setEnabled(false);
       setLocalTrack(micTrack);
       await rtcClient.publish([micTrack]);
       setJoined(true);
@@ -97,34 +94,40 @@ const Campers = ({ channelName }: { channelName: string }) => {
         muted: true,
       });
 
-      // Subscribe to other users
-      rtcClient.on(
-        "user-published",
-        async (remoteUser: any, mediaType: string) => {
-          if (mediaType === "audio") {
-            await rtcClient.subscribe(remoteUser, "audio");
-            remoteUser.audioTrack?.play(); // play remote audio
-          }
-        }
-      );
+      // Handle new users publishing audio
+      rtcClient.on("user-published", async (remoteUser: any, mediaType) => {
+        await rtcClient.subscribe(remoteUser, mediaType);
+        if (mediaType === "audio") remoteUser.audioTrack?.play();
 
-      rtcClient.on("user-unpublished", (remoteUser: any) => {
-        // Handled by Firestore presence
+        // Add/update remote user in Firestore for display
+        const remoteUID = remoteUser.uid;
+        setRemoteUsers((prev) => {
+          if (prev.find((u) => u.uid === remoteUID)) return prev;
+          return [
+            ...prev,
+            {
+              uid: remoteUID,
+              displayName: `User ${remoteUID}`,
+              photoURL: `https://i.pravatar.cc/150?u=${remoteUID}`,
+              muted: false,
+            },
+          ];
+        });
+        showToast(`User ${remoteUID} joined the room`);
       });
 
-      // Handle tab close / leave
+      // Clean up on leave/unmount
       const handleBeforeUnload = async () => {
         await leaveChannel(rtcClient, micTrack);
       };
       window.addEventListener("beforeunload", handleBeforeUnload);
+      return () => {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+      };
     };
 
     initAgora();
-
-    return () => {
-      leaveChannel(rtcClient, micTrack);
-    };
-  }, [user, channelName]);
+  }, [user]);
 
   // Toggle mic
   const toggleMute = async () => {
@@ -159,7 +162,7 @@ const Campers = ({ channelName }: { channelName: string }) => {
 
   return (
     <div className="bg-white rounded-2xl shadow p-6 flex flex-col h-full relative">
-      <h2 className="text-xl font-bold mb-4">Campers Room: {channelName}</h2>
+      <h2 className="text-xl font-bold mb-4">Campers Room</h2>
 
       {/* Toasts */}
       <div className="fixed top-4 right-4 space-y-2 z-50">
