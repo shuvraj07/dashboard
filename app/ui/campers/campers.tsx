@@ -56,7 +56,10 @@ const Campers: React.FC<CampersProps> = ({ channelName }) => {
         // Subscribe to remote users
         rtcClient.on(
           "user-published",
-          async (remoteUser: any, mediaType: string) => {
+          async (
+            remoteUser: any,
+            mediaType: "audio" | "video" | "datachannel"
+          ) => {
             if (remoteUser.uid === userId) return;
             await rtcClient.subscribe(remoteUser, mediaType);
             if (mediaType === "audio") remoteUser.audioTrack?.play();
